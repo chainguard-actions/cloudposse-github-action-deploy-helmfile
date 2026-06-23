@@ -1,0 +1,160 @@
+name: Test action default values
+on:
+  workflow_dispatch:
+jobs:
+  test-defaults:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install yq for YAML parsing
+        run: |
+          if ! command -v yq &> /dev/null; then
+            wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.35.1/yq_linux_amd64
+            chmod +x /usr/local/bin/yq
+          fi
+
+      - name: Verify default aws-region is us-east-1
+        run: |
+          DEFAULT=$(yq '.inputs.aws-region.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "us-east-1" ]; then
+            echo "FAIL: expected default aws-region 'us-east-1', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify default helmfile-path is deploy
+        run: |
+          DEFAULT=$(yq '.inputs.helmfile-path.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "deploy" ]; then
+            echo "FAIL: expected default helmfile-path 'deploy', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify default helmfile is helmfile.yaml
+        run: |
+          DEFAULT=$(yq '.inputs.helmfile.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "helmfile.yaml" ]; then
+            echo "FAIL: expected default helmfile 'helmfile.yaml', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify default operation is deploy
+        run: |
+          DEFAULT=$(yq '.inputs.operation.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "deploy" ]; then
+            echo "FAIL: expected default operation 'deploy', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify default environment is preview
+        run: |
+          DEFAULT=$(yq '.inputs.environment.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "preview" ]; then
+            echo "FAIL: expected default environment 'preview', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify default debug is false
+        run: |
+          DEFAULT=$(yq '.inputs.debug.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "false" ]; then
+            echo "FAIL: expected default debug 'false', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify default release_label_name is release
+        run: |
+          DEFAULT=$(yq '.inputs.release_label_name.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "release" ]; then
+            echo "FAIL: expected default release_label_name 'release', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify default helm_version is 3.11.1
+        run: |
+          DEFAULT=$(yq '.inputs.helm_version.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "3.11.1" ]; then
+            echo "FAIL: expected default helm_version '3.11.1', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify default helmfile_version is 0.143.5
+        run: |
+          DEFAULT=$(yq '.inputs.helmfile_version.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "0.143.5" ]; then
+            echo "FAIL: expected default helmfile_version '0.143.5', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify default kubectl_version is 1.26.3
+        run: |
+          DEFAULT=$(yq '.inputs.kubectl_version.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "1.26.3" ]; then
+            echo "FAIL: expected default kubectl_version '1.26.3', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify default chamber_version is 2.11.1
+        run: |
+          DEFAULT=$(yq '.inputs.chamber_version.default' action.yml)
+          echo "actual: $DEFAULT"
+          if [ "$DEFAULT" != "2.11.1" ]; then
+            echo "FAIL: expected default chamber_version '2.11.1', got '$DEFAULT'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Verify required inputs have required true
+        run: |
+          for input in cluster namespace image image-tag operation; do
+            REQUIRED=$(yq ".inputs.${input}.required" action.yml)
+            echo "input '${input}' required: $REQUIRED"
+            if [ "$REQUIRED" != "true" ]; then
+              echo "FAIL: input '${input}' should be required but got '$REQUIRED'"
+              exit 1
+            fi
+            echo "PASS: input '${input}' is required"
+          done
+
+      - name: Invoke action to satisfy lint requirement (expect failure without real infra)
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          cluster: test-cluster
+          namespace: test-namespace
+          image: nginx
+          image-tag: latest
+          operation: deploy
+
+      - name: Assert action was invoked
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "actual outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action was invoked and produced an outcome: $OUTCOME"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

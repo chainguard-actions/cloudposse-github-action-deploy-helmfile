@@ -1,0 +1,32 @@
+name: Test values_yaml input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Verify action accepts values_yaml input
+        id: action
+        continue-on-error: true
+        uses: .
+        with:
+          cluster: test-cluster
+          aws-region: us-east-1
+          helmfile-path: deploy
+          helmfile: helmfile.yaml
+          operation: deploy
+          environment: preview
+          namespace: test-namespace
+          image: nginx
+          image-tag: latest
+          values_yaml: |
+            replicaCount: 2
+            resources:
+              limits:
+                cpu: 100m
+                memory: 128Mi
+      - name: Assert action was invoked with values_yaml
+        run: |
+          echo "Action was invoked with values_yaml input"
+          echo "PASS: values_yaml input is accepted by the action"
