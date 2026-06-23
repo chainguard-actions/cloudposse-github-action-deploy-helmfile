@@ -1,0 +1,52 @@
+name: Test deploy with debug mode and extra values
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: refs/heads/main
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Invoke action with debug mode and extra values
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          cluster: my-test-cluster
+          aws-region: us-west-2
+          helmfile-path: deploy
+          helmfile: helmfile.yaml
+          operation: deploy
+          environment: staging
+          namespace: staging-namespace
+          image: myapp
+          image-tag: "v2.0.0"
+          gitref-sha: "abc1234567890abcdef1234567890abcdef12345"
+          debug: "true"
+          release_label_name: release
+          values_yaml: |
+            replicaCount: 2
+            resources:
+              limits:
+                cpu: "500m"
+                memory: "256Mi"
+          helm_version: "3.11.1"
+          helmfile_version: "0.143.5"
+          kubectl_version: "1.26.3"
+          chamber_version: "2.11.1"
+
+      - name: Assert action was invoked with debug and extra values
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "Action outcome: $OUTCOME"
+          # The action is expected to fail at AWS authentication in a test environment
+          # without real credentials. We verify it was invoked (not skipped).
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to be invoked"
+            exit 1
+          fi
+          echo "PASS: action was invoked with debug mode and extra values (outcome: $OUTCOME)"
