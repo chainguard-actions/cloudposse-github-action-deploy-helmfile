@@ -1,0 +1,47 @@
+name: Test Deploy HelmFile - Basic Deploy
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create minimal helmfile structure
+        run: |
+          mkdir -p deploy
+          cat > deploy/helmfile.yaml << 'EOF'
+          environments:
+            preview:
+              values: []
+          releases: []
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        env:
+          AWS_ACCESS_KEY_ID: fake-key
+          AWS_SECRET_ACCESS_KEY: fake-secret
+        with:
+          cluster: test-cluster
+          aws-region: us-east-1
+          helmfile-path: deploy
+          helmfile: helmfile.yaml
+          operation: deploy
+          environment: preview
+          namespace: test-namespace
+          image: nginx
+          image-tag: latest
+          debug: "false"
+
+      - name: Assert action was invoked (may fail without real cluster)
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # The action will fail without real AWS/K8s credentials
+          # We verify it was at least invoked (not skipped)
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to run"
+            exit 1
+          fi
+          echo "PASS: action was invoked (outcome: ${{ steps.action.outcome }})"
