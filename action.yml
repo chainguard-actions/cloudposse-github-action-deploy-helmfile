@@ -1,0 +1,95 @@
+name: 'Deploy HelmFile'
+description: 'Deploy on Kubernetes with HelmFile'
+author: hello@cloudposse.com
+branding:
+  icon: 'file-text'
+  color: 'white'
+inputs:
+  cluster:
+    description: Cluster name
+    required: true
+  aws-region:
+    description: AWS region
+    required: false
+    default: us-east-1
+  helmfile-path:
+    description: The path where lives the helmfile.
+    required: false
+    default: deploy
+  helmfile:
+    description: Helmfile name
+    required: false
+    default: helmfile.yaml
+  operation:
+    description: Operation with helmfiles. (valid options - `deploy`, `destroy`)
+    required: true
+    default: deploy
+  environment:
+    description: Helmfile environment
+    required: false
+    default: preview
+  gitref-sha:
+    description: Git SHA
+    required: false
+    default: ''
+  namespace:
+    description: Kubernetes namespace
+    required: true
+  image:
+    description: Docker image
+    required: true
+  image-tag:
+    description: Docker image tag
+    required: true
+  debug:
+    description: Debug mode
+    default: 'false'
+    required: false
+  release_label_name:
+    description: The name of the label used to describe the helm release
+    default: "release"
+    required: false
+  values_yaml:
+    description: YAML string with extra values to use in a helmfile deploy
+    required: false
+  helm_version:
+    description: Helm version
+    default: 3.11.1
+  helmfile_version:
+    description: Helmfile version
+    default: 0.143.5
+  kubectl_version:
+    description: Kubectl version
+    default: 1.26.3
+  chamber_version:
+    description: Kubectl version
+    default: 2.11.1
+  url-resource-type:
+    description: The type of the resource to get the URL from
+    required: false
+    default: 'ingress'
+outputs:
+  webapp-url:
+    description: "Web Application url"
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    AWS_REGION: ${{ inputs.aws-region }}
+    ENVIRONMENT: ${{ inputs.environment }}
+    HELM_VALUES_YAML: ${{ inputs.values_yaml }}
+    HELMFILE: ${{ inputs.helmfile }}
+    HELMFILE_PATH: ${{ inputs.helmfile-path }}
+    NAMESPACE: ${{ inputs.namespace }}
+    IMAGE_NAME: ${{ inputs.image }}
+    IMAGE_TAG: ${{ inputs.image-tag }}
+    OPERATION: ${{ inputs.operation }}
+    GITREF_SHA: ${{ inputs.gitref-sha }}
+    CLUSTER_NAME: ${{ inputs.cluster }}
+    HELM_DEBUG: ${{ inputs.debug }}
+    RELEASE_LABEL_NAME: ${{ inputs.release_label_name }}
+    KUBECTL_VERSION: ${{ inputs.kubectl_version }}
+    HELM_VERSION: ${{ inputs.helm_version }}
+    HELMFILE_VERSION: ${{ inputs.helmfile_version }}
+    CHAMBER_VERSION: ${{ inputs.chamber_version }}
+    URL_RESOURCE_TYPE: ${{ inputs.url-resource-type }}
