@@ -53,7 +53,8 @@ if [[ "${OPERATION}" == "deploy" ]]; then
   do
 	ENTRYPOINT=$(kubectl --namespace ${NAMESPACE} get -l ${RELEASE_LABEL_NAME}=${RELEASE} ingress -o json | jq --raw-output '[.items[].metadata.annotations["outputs.webapp-url"]] | first')
 		if [[ "${ENTRYPOINT}" != "" ]]; then
-			echo "webapp-url=${ENTRYPOINT}" >> $GITHUB_OUTPUT
+			safe=$(printf '%s' "${ENTRYPOINT}" | tr -d '\n\r')
+			echo "webapp-url=${safe}" >> "$GITHUB_OUTPUT"
   	fi
   done
 

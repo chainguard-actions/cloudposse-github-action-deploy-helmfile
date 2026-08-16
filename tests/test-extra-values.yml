@@ -1,4 +1,4 @@
-name: Test debug mode input is accepted
+name: Test extra helm values input is accepted
 on:
   workflow_dispatch:
 
@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with debug mode enabled (expect failure - no AWS credentials)
+      - name: Run action with extra values_yaml (expect failure - no AWS credentials)
         id: action
         uses: .
         continue-on-error: true
@@ -18,12 +18,17 @@ jobs:
           helmfile-path: deploy
           helmfile: helmfile.yaml
           operation: deploy
-          environment: staging
-          namespace: debug-namespace
+          environment: preview
+          namespace: test-namespace
           image: myapp
-          image-tag: v1.0.0
-          debug: "true"
-          release_label_name: release
+          image-tag: v2.0.0
+          debug: "false"
+          values_yaml: |
+            replicaCount: 2
+            resources:
+              limits:
+                cpu: 100m
+                memory: 128Mi
 
       - name: Assert action failed due to missing AWS credentials (not input error)
         run: |
@@ -32,4 +37,4 @@ jobs:
             echo "FAIL: expected action to fail without AWS credentials, but got: ${{ steps.action.outcome }}"
             exit 1
           fi
-          echo "PASS: action correctly failed without AWS credentials (debug mode input accepted)"
+          echo "PASS: action correctly failed without AWS credentials (values_yaml input accepted)"
