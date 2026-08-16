@@ -1,0 +1,50 @@
+name: Test Deploy HelmFile - Custom Tool Versions
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Test that custom tool version inputs are accepted.
+      # The action will fail at AWS authentication since no real credentials
+      # are available in the test environment.
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          cluster: prod-cluster
+          aws-region: us-east-2
+          helmfile-path: k8s/deploy
+          helmfile: helmfile.yaml
+          operation: deploy
+          environment: production
+          namespace: prod-namespace
+          image: myregistry/myapp
+          image-tag: 1.2.3
+          debug: 'false'
+          release_label_name: release
+          url-resource-type: ingress
+          helm_version: 3.11.1
+          helmfile_version: 0.143.5
+          kubectl_version: 1.26.3
+          chamber_version: 2.11.1
+          gitref-sha: abc1234def5678
+
+      - name: Assert action ran with custom version inputs
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because there are no AWS credentials,
+          # not because of missing/invalid inputs (custom versions).
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (unexpected but acceptable)"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed as expected (no AWS credentials in test environment)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS"

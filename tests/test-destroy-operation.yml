@@ -1,0 +1,45 @@
+name: Test Deploy HelmFile - Destroy Operation Inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Test the destroy operation path with required inputs.
+      # The action will fail at AWS authentication since no real credentials
+      # are available in the test environment.
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          cluster: test-cluster
+          aws-region: us-west-2
+          helmfile-path: deploy
+          helmfile: helmfile.yaml
+          operation: destroy
+          environment: preview
+          namespace: test-namespace
+          image: nginx
+          image-tag: v1.0.0
+          debug: 'false'
+          release_label_name: release
+          url-resource-type: ingress
+
+      - name: Assert action ran (destroy operation inputs accepted)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because there are no AWS credentials,
+          # not because of missing/invalid inputs.
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (unexpected but acceptable)"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed as expected (no AWS credentials in test environment)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS"

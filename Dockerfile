@@ -19,9 +19,7 @@ RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.l
 # Update CA certificates and install required packages
 RUN apt-get update && apt-get install -y ca-certificates apt-utils curl
 
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/cloudposse/packages/cfg/setup/bash.deb.sh' -o /tmp/cloudposse-setup.sh \
-    && bash /tmp/cloudposse-setup.sh \
-    && rm -f /tmp/cloudposse-setup.sh
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/cloudposse/packages/cfg/setup/bash.deb.sh' | bash
 
 RUN apt-get update && apt-get install -y \
     bash \

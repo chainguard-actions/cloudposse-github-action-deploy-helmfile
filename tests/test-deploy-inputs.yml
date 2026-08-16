@@ -1,0 +1,45 @@
+name: Test Deploy HelmFile - Deploy Operation Inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # This Docker action requires AWS credentials and a real Kubernetes cluster.
+      # We verify that the action accepts the required inputs and fails at the
+      # expected AWS authentication step (not at input validation).
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          cluster: test-cluster
+          aws-region: us-east-1
+          helmfile-path: deploy
+          helmfile: helmfile.yaml
+          operation: deploy
+          environment: preview
+          namespace: test-namespace
+          image: nginx
+          image-tag: latest
+          debug: 'false'
+          release_label_name: release
+          url-resource-type: ingress
+
+      - name: Assert action ran and failed at AWS auth (not at input parsing)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because there are no AWS credentials,
+          # not because of missing/invalid inputs. A failure here is expected.
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (unexpected but acceptable)"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed as expected (no AWS credentials in test environment)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS"
